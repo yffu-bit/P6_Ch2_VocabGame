@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>詞語大挑戰 — NCS 中文學習遊戲</title>
+<style>
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei","Heiti TC","Noto Sans CJK TC",sans-serif;
+    background:linear-gradient(160deg,#e8f4ff 0%,#f7f0ff 100%);
+    min-height:100vh;color:#22303f;
+  }
+  header{
+    display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+    padding:14px 22px;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.08);
+    position:sticky;top:0;z-index:10;
+  }
+  header h1{font-size:22px;margin:0;color:#1e3a8a;}
+  .header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  #whoami{font-size:16px;font-weight:700;color:#0f766e;background:#ccfbf1;padding:6px 14px;border-radius:999px;}
+  .screen{display:none;padding:22px;max-width:920px;margin:0 auto;}
+  .screen.active{display:block;animation:fade .25s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+  h2{font-size:26px;color:#1e3a8a;margin:0 0 8px;}
+  h3{font-size:20px;color:#1e3a8a;margin:0 0 12px;}
+  .card{background:#fff;border-radius:20px;padding:24px;box-shadow:0 6px 24px rgba(80,110,160,.13);margin-bottom:18px;}
+  .card.center{text-align:center;}
+  .hint{color:#64748b;font-size:16px;margin:0 0 14px;}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
+  button{
+    font-family:inherit;cursor:pointer;border:none;border-radius:14px;
+    font-size:18px;padding:12px 22px;transition:.15s;font-weight:600;
+  }
+  button:disabled{opacity:.45;cursor:not-allowed;}
+  .primary{background:#3b82f6;color:#fff;box-shadow:0 4px 0 #1d4ed8;}
+  .primary:hover:not(:disabled){background:#2563eb;}
+  .primary:active:not(:disabled){transform:translateY(3px);box-shadow:0 1px 0 #1d4ed8;}
+  .ghost{background:#eef2f7;color:#334155;}
+  .ghost:hover{background:#e2e8f0;}
+  .danger{background:#fee2e2;color:#b91c1c;}
+  .danger:hover{background:#fecaca;}
+  .big{font-size:22px;padding:16px 40px;}
+
+  /* 關卡狀態列 */
+  .level-bar{
+    display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;
+    background:#1e3a8a;color:#fff;border-radius:16px;padding:12px 20px;margin-bottom:16px;
+    font-size:18px;font-weight:700;
+  }
+  .level-bar .score{background:rgba(255,255,255,.2);padding:4px 14px;border-radius:999px;}
+
+  /* 語音按鈕 */
+  .audio-btn{
+    font-size:24px;padding:18px 48px;background:#fbbf24;color:#78350f;font-weight:800;
+    border-radius:999px;box-shadow:0 6px 0 #d97706;margin:6px auto 18px;display:block;
+  }
+  .audio-btn:active{transform:translateY(4px);box-shadow:0 2px 0 #d97706;}
+
+  /* 生字格 */
+  .answer-area{display:flex;gap:12px;justify-content:center;min-height:78px;margin-bottom:16px;flex-wrap:wrap;}
+  .slot{
+    width:74px;height:74px;border:3px dashed #c7d4e6;border-radius:16px;
+    display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800;
+    background:#f8fbff;color:#1e3a8a;
+  }
+  .slot.ok{border-style:solid;border-color:#34d399;background:#ecfdf5;color:#065f46;}
+  .slot.bad{border-style:solid;border-color:#f87171;background:#fef2f2;color:#991b1b;}
+
+  /* 字卡 */
+  .tiles{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin:8px 0 18px;}
+  .tile{
+    width:74px;height:74px;font-size:34px;font-weight:800;padding:0;
+    background:#fff8e6;border:3px solid #f5c66b;color:#8a5a00;border-radius:16px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .tile:hover:not(:disabled){background:#ffeeba;transform:translateY(-2px);}
+  .tile.used{visibility:hidden;}
+
+  /* 選項 */
+  .option{
+    display:block;width:100%;text-align:center;font-size:26px;font-weight:700;
+    padding:16px;background:#f0f7ff;border:3px solid #bcd8f7;color:#1e3a8a;
+    border-radius:16px;margin-bottom:12px;
+  }
+  .option:hover:not(:disabled){background:#dceaff;transform:translateY(-2px);}
+  .option.correct{background:#d1fae5;border-color:#34d399;color:#065f46;}
+  .option.wrong{background:#fee2e2;border-color:#f87171;color:#991b1b;}
+
+  .feedback{font-size:22px;font-weight:800;text-align:center;min-height:34px;margin:6px 0 14px;}
+  .feedback.good{color:#059669;}
+  .feedback.bad{color:#dc2626;}
+
+  .meaning-box{
+    background:#f0f9ff;border:3px solid #bae6fd;border-radius:16px;padding:22px;
+    font-size:24px;line-height:1.6;text-align:center;color:#0c4a6e;margin-bottom:18px;font-weight:600;
+  }
+  .sentence-box{
+    background:#f0fdf4;border:3px solid #bbf7d0;border-radius:16px;padding:24px;
+    font-size:26px;line-height:1.8;text-align:center;color:#14532d;margin-bottom:18px;font-weight:600;
+  }
+  .blank{color:#f59e0b;font-weight:800;}
+
+  /* 學生姓名 */
+  .student-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;margin-top:10px;}
+  .name-btn{
+    background:#fff;border:3px solid #bfdbfe;color:#1e40af;font-size:20px;font-weight:700;
+    padding:18px 10px;border-radius:18px;
+  }
+  .name-btn:hover{background:#eff6ff;border-color:#60a5fa;transform:translateY(-3px);}
+
+  textarea{
+    width:100%;font-family:inherit;font-size:18px;padding:14px;border-radius:14px;
+    border:2px solid #cbd5e1;resize:vertical;line-height:1.7;
+  }
+  textarea:focus{outline:none;border-color:#60a5fa;}
+
+  /* 大圖示 */
+  .big-icon{font-size:70px;margin-bottom:6px;}
+  .big-score{font-size:40px;font-weight:900;color:#1d4ed8;margin:10px 0;}
+
+  /* 表格 */
+  .table-wrap{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;font-size:16px;}
+  th,td{border:1px solid #dbe3ee;padding:10px 8px;text-align:center;}
+  th{background:#eff6ff;color:#1e3a8a;font-size:15px;line-height:1.4;}
+  td.name{font-weight:800;color:#0f172a;font-size:17px;}
+  td.pass{background:#ecfdf5;color:#065f46;font-weight:700;}
+  td.fail{background:#fef2f2;color:#b91c1c;font-weight:700;}
+  td.na{color:#94a3b8;}
+  small{font-size:13px;font-weight:400;}
+
+  @media(max-width:560px){
+    .tile,.slot{width:58px;height:58px;font-size:26px;border-radius:12px;}
+    .option{font-size:22px;}
+    .sentence-box,.meaning-box{font-size:21px;}
+    header h1{font-size:18px;}
+    .audio-btn{font-size:20px;padding:16px 32px;}
+  }
+  @media print{
+    header,.no-print{display:none !important;}
+    .screen{display:block !important;padding:0;}
+    .card{box-shadow:none;border:1px solid #ccc;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🎯 詞語大挑戰</h1>
+  <div class="header-right">
+    <span id="whoami"></span>
+    <button id="btnSwitch" class="ghost no-print">🔄 換學生</button>
+    <button id="btnTeacher" class="ghost no-print">👩‍🏫 教師專區</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============ 教師設定 ============ -->
+  <section id="screen-setup" class="screen">
+    <h2>👩‍🏫 教師設定：輸入學生姓名</h2>
+    <div class="card">
+      <p class="hint">每行一個姓名，或用逗號／頓號分隔。例：<br>陳小明<br>李美儀<br>王大力</p>
+      <textarea id="studentInput" rows="9" placeholder="陳小明&#10;李美儀&#10;王大力&#10;張小芬"></textarea>
+      <div class="row" style="margin-top:14px;">
+        <button id="btnSaveStudents" class="primary">💾 儲存名單並開始</button>
+        <button id="btnClearStudents" class="danger">🗑️ 清空名單</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 學生登入 ============ -->
+  <section id="screen-login" class="screen">
+    <h2>👋 請選擇你的姓名</h2>
+    <div class="card">
+      <div id="studentButtons" class="student-grid"></div>
+    </div>
+  </section>
+
+  <!-- ============ 第一關 ============ -->
+  <section id="screen-l1" class="screen">
+    <div class="level-bar">
+      <span>第一關：聽音選字 🔊</span>
+      <span id="l1Progress">1 / 9</span>
+      <span class="score" id="l1Score">✅ 0</span>
+    </div>
+    <div class="card">
+      <p class="hint" style="text-align:center;">按「播放讀音」，然後<b>依正確次序</b>點選生字。</p>
+      <button id="btnPlay" class="audio-btn">🔊 播放讀音</button>
+      <div id="l1Answer" class="answer-area"></div>
+      <div id="l1Tiles" class="tiles"></div>
+      <div id="l1Feedback" class="feedback"></div>
+      <div class="row" style="justify-content:center;">
+        <button id="btnL1Clear" class="ghost">🔄 清除</button>
+        <button id="btnL1Next" class="primary" disabled>下一題 ▶</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 第二關 ============ -->
+  <section id="screen-l2" class="screen">
+    <div class="level-bar">
+      <span>第二關：詞義配對 📖</span>
+      <span id="l2Progress">1 / 9</span>
+      <span class="score" id="l2Score">✅ 0</span>
+    </div>
+    <div class="card">
+      <p class="hint" style="text-align:center;">讀一讀下面的意思，選出正確的詞語。</p>
+      <div id="l2Meaning" class="meaning-box"></div>
+      <div id="l2Options"></div>
+      <div id="l2Feedback" class="feedback"></div>
+      <div class="row" style="justify-content:center;">
+        <button id="btnL2Next" class="primary" disabled>下一題 ▶</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 第三關 ============ -->
+  <section id="screen-l3" class="screen">
+    <div class="level-bar">
+      <span>第三關：句子填充 ✏️</span>
+      <span id="l3Progress">1 / 9</span>
+      <span class="score" id="l3Score">✅ 0</span>
+    </div>
+    <div class="card">
+      <p class="hint" style="text-align:center;">選出最適合填入空格的詞語。</p>
+      <div id="l3Sentence" class="sentence-box"></div>
+      <div id="l3Options"></div>
+      <div id="l3Feedback" class="feedback"></div>
+      <div class="row" style="justify-content:center;">
+        <button id="btnL3Next" class="primary" disabled>下一題 ▶</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 關卡結算 ============ -->
+  <section id="screen-leveldone" class="screen">
+    <div class="card center">
+      <div id="ldIcon" class="big-icon">🎉</div>
+      <h2 id="ldTitle"></h2>
+      <p id="ldScore" class="big-score"></p>
+      <p id="ldMsg" class="hint" style="font-size:19px;"></p>
+      <button id="ldBtn" class="primary big"></button>
+    </div>
+  </section>
+
+  <!-- ============ 總成績 ============ -->
+  <section id="screen-final" class="screen">
+    <div class="card center">
+      <div class="big-icon">🏆</div>
+      <h2 id="finalName"></h2>
+      <div id="finalTable" style="margin:18px 0;"></div>
+      <button id="btnFinalBack" class="primary big">返回學生名單</button>
+    </div>
+  </section>
+
+  <!-- ============ 教師專區 ============ -->
+  <section id="screen-teacher" class="screen">
+    <h2>👩‍🏫 教師專區</h2>
+    <div class="card">
+      <h3>📊 學生成績表</h3>
+      <div class="table-wrap"><table id="scoreTable"></table></div>
+      <div class="row no-print" style="margin-top:16px;">
+        <button id="btnExport" class="primary">⬇️ 匯出 CSV 成績表</button>
+        <button id="btnPrint" class="ghost">🖨️ 列印／儲存 PDF</button>
+        <button id="btnClearScores" class="danger">🗑️ 清除所有成績</button>
+      </div>
+    </div>
+    <div class="card no-print">
+      <h3>📝 編輯學生名單</h3>
+      <textarea id="studentInput2" rows="6"></textarea>
+      <div class="row" style="margin-top:12px;">
+        <button id="btnSaveStudents2" class="primary">💾 更新名單</button>
+        <button id="btnBackFromTeacher" class="ghost">← 返回</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+/* =========================================================
+   資料
+   ========================================================= */
+const WORDS = [
+  { w:'反省',     meaning:'檢查自己的言行，找出過錯並加以改正。' },
+  { w:'謹慎',     meaning:'做事小心仔細，不草率、不隨便。' },
+  { w:'感謝',     meaning:'因為得到別人的幫助或好意，心中感激，並向對方表示謝意。' },
+  { w:'教導',     meaning:'指導、教育別人，使人明白道理。' },
+  { w:'習慣',     meaning:'長期養成、不容易改變的行為或生活方式。' },
+  { w:'不知所措', meaning:'不知道該怎麼辦才好，形容慌亂、沒有主意。' },
+  { w:'悶悶不樂', meaning:'心情不好，心裡不痛快，提不起勁。' },
+  { w:'恍然大悟', meaning:'一下子完全明白過來。' },
+  { w:'承諾',     meaning:'答應別人，並決心要做到的事。' }
+];
+
+const SENTENCES = [
+  { before:'每天早睡早起是良好的生活', after:'。',                         ans:'習慣' },
+  { before:'妹妹',                     after:'爸爸送她生日禮物。',           ans:'感謝' },
+  { before:'面對突如其來的天災，大家都', after:'。',                        ans:'不知所措' },
+  { before:'小華因為考試不及格，所以整天', after:'。',                      ans:'悶悶不樂' },
+  { before:'聽完《狼來了》的故事，我',  after:'，明白了誠實的重要。',        ans:'恍然大悟' },
+  { before:'班長做事小心',             after:'，很少出錯。',                 ans:'謹慎' },
+  { before:'人人都會犯錯，如果犯錯後能用心', after:'，就不容易再犯錯了。',    ans:'反省' },
+  { before:'晴晴對老師許下',           after:'，決心改過。',                 ans:'承諾' },
+  { before:'媽媽常常提醒我要愛人如己，我不會忘記她對我的', after:'。',        ans:'教導' }
+];
+
+const PASS_LINE = 80;   // 80% 合格
+
+/* =========================================================
+   小工具
+   ========================================================= */
+const $  = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+
+function shuffle(arr){
+  const a = [...arr];
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+function esc(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function lsGet(k, def){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; }catch(e){ return def; } }
+function lsSet(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+function show(id){ $$('.screen').forEach(s=>s.classList.remove('active')); $('#'+id).classList.add('active'); window.scrollTo(0,0); }
+
+/* =========================================================
+   語音
+   ========================================================= */
+let zhVoice = null;
+function pickVoice(){
+  if(!('speechSynthesis' in window)) return;
+  const vs = speechSynthesis.getVoices();
+  if(!vs.length) return;
+  zhVoice = vs.find(v => /zh[-_]HK/i.test(v.lang))
+         || vs.find(v => /zh[-_]TW/i.test(v.lang))
+         || vs.find(v => /zh[-_]CN/i.test(v.lang))
+         || vs.find(v => /zh/i.test(v.lang))
+         || null;
+}
+if('speechSynthesis' in window){
+  pickVoice();
+  speechSynthesis.onvoiceschanged = pickVoice;
+}
+function speak(text){
+  if(!('speechSynthesis' in window)) return;
+  try{
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'zh-HK';
+    u.rate = 0.75;
+    u.pitch = 1;
+    if(zhVoice) u.voice = zhVoice;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+
+/* =========================================================
+   狀態 / 儲存
+   ========================================================= */
+let students = lsGet('ncs_students_v1', []);
+let scores   = lsGet('ncs_scores_v1', {});
+let currentStudent = null;
+
+function saveScore(name, level, correct, total){
+  if(!name) return;
+  const pct = Math.round(correct / total * 100);
+  const rec = scores[name] || {};
+  const prev = rec[level];
+  if(!prev || pct >= prev.pct){
+    rec[level] = { correct, total, pct, passed: pct >= PASS_LINE, attempts: (prev ? prev.attempts : 0) + 1 };
+  }else{
+    prev.attempts = (prev.attempts || 1) + 1;
+  }
+  scores[name] = rec;
+  lsSet('ncs_scores_v1', scores);
+}
+
+/* =========================================================
+   名單處理
+   ========================================================= */
+function parseNames(text){
+  return [...new Set(
+    text.split(/[\n,，、;；]+/).map(s=>s.trim()).filter(Boolean)
+  )];
+}
+
+function renderLogin(){
+  const box = $('#studentButtons');
+  box.innerHTML = '';
+  if(!students.length){
+    box.innerHTML = '<p class="hint">尚未有學生名單，請教師先輸入。</p>';
+    return;
+  }
+  students.forEach(n=>{
+    const b = document.createElement('button');
+    b.className = 'name-btn';
+    b.textContent = n;
+    b.onclick = () => {
+      currentStudent = n;
+      $('#whoami').textContent = '👤 ' + n;
+      startLevel1();
+    };
+    box.appendChild(b);
+  });
+}
+
+/* =========================================================
+   第一關：聽音選字
+   ========================================================= */
+let l1 = {};
+
+function startLevel1(){
+  l1 = { order: shuffle(WORDS), idx: 0, correct: 0, answered: false, answer: [], tiles: [] };
+  show('screen-l1');
+  renderL1();
+}
+
+function buildTiles(word){
+  const target = [...word];
+  const pool = shuffle(WORDS.filter(x => x.w !== word).flatMap(x => [...x.w]));
+  const distract = [];
+  for(const c of pool){
+    if(distract.length >= 3) break;
+    if(target.includes(c)) continue;
+    if(distract.includes(c)) continue;
+    distract.push(c);
+  }
+  const tiles = target.map((c,i) => ({ char:c, id:'t'+i, used:false }))
+    .concat(distract.map((c,i) => ({ char:c, id:'d'+i, used:false })));
+  return shuffle(tiles);
+}
+
+function renderL1(){
+  const item = l1.order[l1.idx];
+  l1.answer = [];
+  l1.answered = false;
+  l1.tiles = buildTiles(item.w);
+
+  $('#l1Progress').textContent = `${l1.idx + 1} / ${l1.order.length}`;
+  $('#l1Score').textContent = `✅ ${l1.correct}`;
+  const fb = $('#l1Feedback');
+  fb.textContent = '';
+  fb.className = 'feedback';
+  $('#btnL1Next').disabled = true;
+
+  renderAnswerL1();
+  renderTilesL1();
+  speak(item.w);
+}
+
+function renderAnswerL1(){
+  const target = [...l1.order[l1.idx].w];
+  const box = $('#l1Answer');
+  box.innerHTML = '';
+  target.forEach((ch, i) => {
+    const d = document.createElement('div');
+    d.className = 'slot';
+    d.textContent = l1.answer[i] || '';
+    if(l1.answered){
+      if(l1.answer[i] === target[i]) d.classList.add('ok');
+      else d.classList.add('bad');
+    }
+    box.appendChild(d);
+  });
+}
+
+function renderTilesL1(){
+  const box = $('#l1Tiles');
+  box.innerHTML = '';
+  l1.tiles.forEach(t => {
+    const b = document.createElement('button');
+    b.className = 'tile' + (t.used ? ' used' : '');
+    b.textContent = t.char;
+    b.disabled = t.used || l1.answered;
+    b.onclick = () => pickTile(t);
+    box.appendChild(b);
+  });
+}
+
+function pickTile(t){
+  if(l1.answered || t.used) return;
+  t.used = true;
+  l1.answer.push(t.char);
+  renderAnswerL1();
+  renderTilesL1();
+  if(l1.answer.length === [...l1.order[l1.idx].w].length) checkL1();
+}
+
+function checkL1(){
+  l1.answered = true;
+  const target = l1.order[l1.idx].w;
+  const ok = l1.answer.join('') === target;
+  if(ok) l1.correct++;
+
+  const fb = $('#l1Feedback');
+  fb.textContent = ok ? '✅ 答對了！' : `❌ 正確答案：${target}`;
+  fb.className = 'feedback ' + (ok ? 'good' : 'bad');
+  $('#l1Score').textContent = `✅ ${l1.correct}`;
+  $('#btnL1Next').disabled = false;
+  renderAnswerL1();
+  renderTilesL1();
+  if(!ok) speak(target);
+}
+
+function nextL1(){
+  l1.idx++;
+  if(l1.idx >= l1.order.length) finishLevel(1, l1.correct, l1.order.length);
+  else renderL1();
+}
+
+/* =========================================================
+   第二關：詞義配對
+   ========================================================= */
+let l2 = {};
+
+function startLevel2(){
+  l2 = { order: shuffle(WORDS), idx: 0, correct: 0, answered: false };
+  show('screen-l2');
+  renderL2();
+}
+
+function makeOptions(correct){
+  const others = shuffle(WORDS.map(x => x.w).filter(w => w !== correct)).slice(0, 3);
+  return shuffle([correct, ...others]);
+}
+
+function renderL2(){
+  const item = l2.order[l2.idx];
+  l2.answered = false;
+
+  $('#l2Progress').textContent = `${l2.idx + 1} / ${l2.order.length}`;
+  $('#l2Score').textContent = `✅ ${l2.correct}`;
+  $('#l2Meaning').textContent = item.meaning;
+
+  const fb = $('#l2Feedback');
+  fb.textContent = '';
+  fb.className = 'feedback';
+  $('#btnL2Next').disabled = true;
+
+  const box = $('#l2Options');
+  box.innerHTML = '';
+  makeOptions(item.w).forEach(w => {
+    const b = document.createElement('button');
+    b.className = 'option';
+    b.textContent = w;
+    b.onclick = () => answerL2(b, w, item.w);
+    box.appendChild(b);
+  });
+}
+
+function answerL2(btn, chosen, correct){
+  if(l2.answered) return;
+  l2.answered = true;
+
+  const ok = chosen === correct;
+  if(ok) l2.correct++;
+
+  Array.from($('#l2Options').children).forEach(b => {
+    if(b.textContent === correct) b.classList.add('correct');
+    b.disabled = true;
+  });
+  if(!ok) btn.classList.add('wrong');
+
+  const fb = $('#l2Feedback');
+  fb.textContent = ok ? '✅ 答對了！' : `❌ 正確答案：${correct}`;
+  fb.className = 'feedback ' + (ok ? 'good' : 'bad');
+  $('#l2Score').textContent = `✅ ${l2.correct}`;
+  $('#btnL2Next').disabled = false;
+}
+
+function nextL2(){
+  l2.idx++;
+  if(l2.idx >= l2.order.length) finishLevel(2, l2.correct, l2.order.length);
+  else renderL2();
+}
+
+/* =========================================================
+   第三關：句子填充
+   ========================================================= */
+let l3 = {};
+
+function startLevel3(){
+  l3 = { order: shuffle(SENTENCES.map((_, i) => i)), idx: 0, correct: 0, answered: false };
+  show('screen-l3');
+  renderL3();
+}
+
+function renderL3(){
+  const s = SENTENCES[l3.order[l3.idx]];
+  l3.answered = false;
+
+  $('#l3Progress').textContent = `${l3.idx + 1} / ${l3.order.length}`;
+  $('#l3Score').textContent = `✅ ${l3.correct}`;
+  $('#l3Sentence').innerHTML = esc(s.before) + '<span class="blank">＿＿＿＿</span>' + esc(s.after);
+
+  const fb = $('#l3Feedback');
+  fb.textContent = '';
+  fb.className = 'feedback';
+  $('#btnL3Next').disabled = true;
+
+  const box = $('#l3Options');
+  box.innerHTML = '';
+  makeOptions(s.ans).forEach(w => {
+    const b = document.createElement('button');
+    b.className = 'option';
+    b.textContent = w;
+    b.onclick = () => answerL3(b, w, s.ans);
+    box.appendChild(b);
+  });
+}
+
+function answerL3(btn, chosen, correct){
+  if(l3.answered) return;
+  l3.answered = true;
+
+  const ok = chosen === correct;
+  if(ok) l3.correct++;
+
+  Array.from($('#l3Options').children).forEach(b => {
+    if(b.textContent === correct) b.classList.add('correct');
+    b.disabled = true;
+  });
+  if(!ok) btn.classList.add('wrong');
+
+  const fb = $('#l3Feedback');
+  fb.textContent = ok ? '✅ 答對了！' : `❌ 正確答案：${correct}`;
+  fb.className = 'feedback ' + (ok ? 'good' : 'bad');
+  $('#l3Score').textContent = `✅ ${l3.correct}`;
+  $('#btnL3Next').disabled = false;
+}
+
+function nextL3(){
+  l3.idx++;
+  if(l3.idx >= l3.order.length) finishLevel(3, l3.correct, l3.order.length);
+  else renderL3();
+}
+
+/* =========================================================
+   關卡結算
+   ========================================================= */
+const LEVEL_NAMES = ['一', '二', '三'];
+
+function finishLevel(levelNum, correct, total){
+  const pct = Math.round(correct / total * 100);
+  saveScore(currentStudent, 'l' + levelNum, correct, total);
+  const passed = pct >= PASS_LINE;
+
+  let onBtn;
+  if(passed){
+    if(levelNum === 1) onBtn = startLevel2;
+    else if(levelNum === 2) onBtn = startLevel3;
+    else onBtn = showFinal;
+  }else{
+    if(levelNum === 1) onBtn = startLevel1;
+    else if(levelNum === 2) onBtn = startLevel2;
+    else onBtn = startLevel3;
+  }
+
+  showDone({
+    icon: passed ? '🎉' : '💪',
+    title: passed ? `第${LEVEL_NAMES[levelNum-1]}關通過！` : `第${LEVEL_NAMES[levelNum-1]}關未達標`,
+    scoreText: `${correct} / ${total}　(${pct}%)`,
+    msg: passed
+      ? (levelNum < 3 ? '太棒了！繼續挑戰下一關吧。' : '恭喜你完成全部三關！')
+      : `需要答對 ${PASS_LINE}% 才可過關，再努力一次吧！`,
+    btnText: passed
+      ? (levelNum < 3 ? '前往下一關 ▶' : '查看總成績 🏆')
+      : '再試一次 🔄',
+    onBtn
+  });
+}
+
+let doneHandler = null;
+function showDone({ icon, title, scoreText, msg, btnText, onBtn }){
+  $('#ldIcon').textContent = icon;
+  $('#ldTitle').textContent = title;
+  $('#ldScore').textContent = scoreText;
+  $('#ldMsg').textContent = msg;
+  const b = $('#ldBtn');
+  b.textContent = btnText;
+  doneHandler = onBtn;
+  show('screen-leveldone');
+}
+
+/* =========================================================
+   總成績
+   ========================================================= */
+function showFinal(){
+  const rec = scores[currentStudent] || {};
+  $('#finalName').textContent = `👤 ${currentStudent} 的成績`;
+  let html = '<table><thead><tr><th>關卡</th><th>答對</th><th>百分比</th><th>結果</th></tr></thead><tbody>';
+  [1,2,3].forEach(i=>{
+    const r = rec['l'+i];
+    if(r){
+      html += `<tr><td class="name">第${LEVEL_NAMES[i-1]}關</td><td>${r.correct} / ${r.total}</td>
+        <td class="${r.passed?'pass':'fail'}">${r.pct}%</td>
+        <td class="${r.passed?'pass':'fail'}">${r.passed?'✅ 通過':'❌ 未通過'}</td></tr>`;
+    }else{
+      html += `<tr><td class="name">第${LEVEL_NAMES[i-1]}關</td><td colspan="3" class="na">尚未完成</td></tr>`;
+    }
+  });
+  html += '</tbody></table>';
+  $('#finalTable').innerHTML = html;
+  show('screen-final');
+}
+
+/* =========================================================
+   教師專區
+   ========================================================= */
+function renderTeacherTable(){
+  const t = $('#scoreTable');
+  let html = `<thead><tr>
+      <th>姓名</th>
+      <th>第一關<br><small>聽音選字</small></th>
+      <th>第二關<br><small>詞義配對</small></th>
+      <th>第三關<br><small>句子填充</small></th>
+      <th>平均分</th>
+    </tr></thead><tbody>`;
+
+  if(!students.length){
+    html += '<tr><td colspan="5" class="na">尚未輸入學生名單</td></tr>';
+  }
+
+  students.forEach(n=>{
+    const rec = scores[n] || {};
+    let sum = 0, cnt = 0;
+    const cells = ['l1','l2','l3'].map(l=>{
+      const r = rec[l];
+      if(!r) return '<td class="na">—</td>';
+      sum += r.pct; cnt++;
+      return `<td class="${r.passed?'pass':'fail'}">${r.pct}%<br><small>${r.correct}/${r.total} ${r.passed?'✅':'❌'}</small></td>`;
+    }).join('');
+    const avg = cnt ? Math.round(sum/cnt) + '%' : '—';
+    html += `<tr><td class="name">${esc(n)}</td>${cells}<td><b>${avg}</b></td></tr>`;
+  });
+
+  html += '</tbody>';
+  t.innerHTML = html;
+}
+
+function exportCSV(){
+  const head = ['姓名',
+    '第一關答對','第一關總題數','第一關百分比','第一關通過',
+    '第二關答對','第二關總題數','第二關百分比','第二關通過',
+    '第三關答對','第三關總題數','第三關百分比','第三關通過',
+    '平均分'];
+  const rows = [head];
+
+  students.forEach(n=>{
+    const rec = scores[n] || {};
+    const row = [n];
+    let sum = 0, cnt = 0;
+    ['l1','l2','l3'].forEach(l=>{
+      const r = rec[l];
+      if(r){
+        row.push(r.correct, r.total, r.pct + '%', r.passed ? '是' : '否');
+        sum += r.pct; cnt++;
+      }else{
+        row.push('', '', '', '');
+      }
+    });
+    row.push(cnt ? Math.round(sum/cnt) + '%' : '');
+    rows.push(row);
+  });
+
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const blob = new Blob(['\uFEFF' + csv], { type:'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'NCS詞語挑戰成績_' + new Date().toISOString().slice(0,10) + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* =========================================================
+   事件綁定
+   ========================================================= */
+// 第一關
+$('#btnPlay').onclick      = () => speak(l1.order[l1.idx].w);
+$('#btnL1Next').onclick    = nextL1;
+$('#btnL1Clear').onclick   = () => { if(!l1.answered) renderL1(); };
+
+// 第二關
+$('#btnL2Next').onclick = nextL2;
+
+// 第三關
+$('#btnL3Next').onclick = nextL3;
+
+// 結算畫面
+$('#ldBtn').onclick = () => { if(doneHandler) doneHandler(); };
+
+// 總成績返回
+$('#btnFinalBack').onclick = () => { currentStudent = null; $('#whoami').textContent = ''; renderLogin(); show('screen-login'); };
+
+// 換學生
+$('#btnSwitch').onclick = () => { currentStudent = null; $('#whoami').textContent = ''; renderLogin(); show('screen-login'); };
+
+// 教師專區
+$('#btnTeacher').onclick = () => {
+  renderTeacherTable();
+  $('#studentInput2').value = students.join('\n');
+  show('screen-teacher');
+};
+$('#btnBackFromTeacher').onclick = () => {
+  if(!students.length) show('screen-setup');
+  else { renderLogin(); show('screen-login'); }
+};
+
+// 名單儲存（設定頁）
+$('#btnSaveStudents').onclick = () => {
+  const list = parseNames($('#studentInput').value);
+  if(!list.length){ alert('請至少輸入一位學生姓名。'); return; }
+  students = list;
+  lsSet('ncs_students_v1', students);
+  renderLogin();
+  show('screen-login');
+};
+$('#btnClearStudents').onclick = () => {
+  if(!confirm('確定清空學生名單？（成績記錄不會被刪除）')) return;
+  students = [];
+  lsSet('ncs_students_v1', students);
+  $('#studentInput').value = '';
+  alert('名單已清空。');
+};
+
+// 名單儲存（教師專區）
+$('#btnSaveStudents2').onclick = () => {
+  const list = parseNames($('#studentInput2').value);
+  if(!list.length){ alert('請至少輸入一位學生姓名。'); return; }
+  students = list;
+  lsSet('ncs_students_v1', students);
+  renderTeacherTable();
+  alert('名單已更新（共 ' + students.length + ' 位學生）。');
+};
+
+// 匯出 / 列印 / 清除
+$('#btnExport').onclick = exportCSV;
+$('#btnPrint').onclick  = () => window.print();
+$('#btnClearScores').onclick = () => {
+  if(!confirm('確定清除所有學生成績？此操作無法復原。')) return;
+  scores = {};
+  lsSet('ncs_scores_v1', scores);
+  renderTeacherTable();
+  alert('所有成績已清除。');
+};
+
+/* =========================================================
+   啟動
+   ========================================================= */
+(function init(){
+  if(students.length){
+    renderLogin();
+    show('screen-login');
+  }else{
+    $('#studentInput').value = '';
+    show('screen-setup');
+  }
+})();
+</script>
+</body>
+</html>
