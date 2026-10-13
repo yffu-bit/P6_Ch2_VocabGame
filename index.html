@@ -988,10 +988,19 @@ $('#btnClearScores').onclick = () => {
    啟動
    ========================================================= */
 (function init(){
-  // 若 localStorage 沒有名單，使用程式碼中的 CLASS_LISTS
-  if(!classLists || !CLASS_NAMES.some(c => (classLists[c] || []).length)){
+  // 只要 CLASS_LISTS 中任何一班有名單，就以程式碼為準
+  const codeHasList = CLASS_NAMES.some(c => (CLASS_LISTS[c] || []).length > 0);
+  if(codeHasList){
     classLists = JSON.parse(JSON.stringify(CLASS_LISTS));
     lsSet('ncs_classlists_v1', classLists);
+    console.log('✅ 已從程式碼載入名單:', classLists);
+  }else{
+    // 程式碼沒名單，才用 localStorage 的
+    if(!classLists){
+      classLists = JSON.parse(JSON.stringify(CLASS_LISTS));
+      lsSet('ncs_classlists_v1', classLists);
+    }
+    console.log('⚠️ 程式碼中沒有名單，使用 localStorage 的:', classLists);
   }
   renderClassButtons();
   show('screen-class');
