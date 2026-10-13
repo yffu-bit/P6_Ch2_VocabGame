@@ -365,8 +365,8 @@ function speak(text){
 /* =========================================================
    狀態 / 儲存
    ========================================================= */
-let students = lsGet('ncs_students_v1', []);
-let scores   = lsGet('ncs_scores_v1', {});
+let students = lsGet('students_v1', []);
+let scores   = lsGet('scores_v1', {});
 let currentStudent = null;
 
 function saveScore(name, level, correct, total){
@@ -380,7 +380,7 @@ function saveScore(name, level, correct, total){
     prev.attempts = (prev.attempts || 1) + 1;
   }
   scores[name] = rec;
-  lsSet('ncs_scores_v1', scores);
+  lsSet('scores_v1', scores);
 }
 
 /* =========================================================
@@ -776,7 +776,7 @@ function exportCSV(){
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'NCS詞語挑戰成績_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.download = '詞語挑戰成績_' + new Date().toISOString().slice(0,10) + '.csv';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -822,14 +822,14 @@ $('#btnSaveStudents').onclick = () => {
   const list = parseNames($('#studentInput').value);
   if(!list.length){ alert('請至少輸入一位學生姓名。'); return; }
   students = list;
-  lsSet('ncs_students_v1', students);
+  lsSet('students_v1', students);
   renderLogin();
   show('screen-login');
 };
 $('#btnClearStudents').onclick = () => {
   if(!confirm('確定清空學生名單？（成績記錄不會被刪除）')) return;
   students = [];
-  lsSet('ncs_students_v1', students);
+  lsSet('students_v1', students);
   $('#studentInput').value = '';
   alert('名單已清空。');
 };
@@ -839,7 +839,7 @@ $('#btnSaveStudents2').onclick = () => {
   const list = parseNames($('#studentInput2').value);
   if(!list.length){ alert('請至少輸入一位學生姓名。'); return; }
   students = list;
-  lsSet('ncs_students_v1', students);
+  lsSet('students_v1', students);
   renderTeacherTable();
   alert('名單已更新（共 ' + students.length + ' 位學生）。');
 };
@@ -850,7 +850,7 @@ $('#btnPrint').onclick  = () => window.print();
 $('#btnClearScores').onclick = () => {
   if(!confirm('確定清除所有學生成績？此操作無法復原。')) return;
   scores = {};
-  lsSet('ncs_scores_v1', scores);
+  lsSet('scores_v1', scores);
   renderTeacherTable();
   alert('所有成績已清除。');
 };
