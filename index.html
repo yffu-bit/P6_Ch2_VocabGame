@@ -102,7 +102,7 @@
   }
   .blank{color:#f59e0b;font-weight:800;}
 
-  /* 學生姓名 / 班別 */
+  /* 學生班號 / 班別 */
   .student-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;margin-top:10px;}
   .name-btn{
     background:#fff;border:3px solid #bfdbfe;color:#1e40af;font-size:20px;font-weight:700;
@@ -188,7 +188,7 @@
 
   <!-- ============ 選擇姓名 ============ -->
   <section id="screen-login" class="screen">
-    <h2 id="loginTitle">👋 請選擇你的姓名</h2>
+    <h2 id="loginTitle">👋 請選擇你的班號</h2>
     <div class="card">
       <div id="studentButtons" class="student-grid"></div>
       <div class="row" style="margin-top:18px;">
@@ -298,7 +298,7 @@
 
     <div class="card no-print">
       <h3>📝 編輯學生名單</h3>
-      <p class="hint">每行一個姓名。若某班不需要名單可留空。</p>
+      <p class="hint">每行一個班號。若某班不需要名單可留空。</p>
       <div id="editArea"></div>
       <div class="row" style="margin-top:12px;">
         <button id="btnSaveStudents2" class="primary">💾 更新名單</button>
