@@ -186,7 +186,7 @@
     </div>
   </section>
 
-  <!-- ============ 選擇姓名 ============ -->
+  <!-- ============ 選擇班號 ============ -->
   <section id="screen-login" class="screen">
     <h2 id="loginTitle">👋 請選擇你的班號</h2>
     <div class="card">
@@ -557,7 +557,7 @@ function saveScore(cls, name, level, correct, total){
 }
 
 /* =========================================================
-   班別 / 姓名選擇
+   班別 / 班號選擇
    ========================================================= */
 function renderClassButtons(){
   const box = $('#classButtons');
@@ -576,13 +576,13 @@ function renderClassButtons(){
 }
 
 function renderLoginForClass(cls){
-  $('#loginTitle').textContent = '👋 ' + cls + ' 請選擇你的姓名';
+  $('#loginTitle').textContent = '👋 ' + cls + ' 請選擇你的班號';
   const box = $('#studentButtons');
   box.innerHTML = '';
   const list = (classLists[cls] || []).filter(Boolean);
 
   if(!list.length){
-    box.innerHTML = '<p class="hint">此班尚未有名單，請通知老師加入你的姓名。</p>';
+    box.innerHTML = '<p class="hint">此班尚未有名單，請通知老師加入你的班號。</p>';
     return;
   }
 
@@ -914,7 +914,7 @@ function renderTeacherTable(){
   const t = $('#scoreTable');
   let html = `<thead><tr>
       <th>班別</th>
-      <th>姓名</th>
+      <th>班號</th>
       <th>第一關<br><small>聽音選字</small></th>
       <th>第二關<br><small>詞義配對</small></th>
       <th>第三關<br><small>句子填充</small></th>
@@ -954,7 +954,7 @@ function renderTeacherTable(){
 }
 
 function exportCSV(){
-  const head = ['班別','姓名',
+  const head = ['班別','班號',
     '第一關答對','第一關總題數','第一關百分比','第一關通過',
     '第二關答對','第二關總題數','第二關百分比','第二關通過',
     '第三關答對','第三關總題數','第三關百分比','第三關通過',
@@ -1001,7 +1001,7 @@ function renderEditArea(){
     const wrap = document.createElement('div');
     wrap.style.marginBottom = '14px';
     wrap.innerHTML = `<label style="font-weight:700;color:#1e3a8a;">${cls}</label>
-      <textarea id="edit_${cls}" rows="4" placeholder="每行一個姓名"></textarea>`;
+      <textarea id="edit_${cls}" rows="4" placeholder="每行一個班號"></textarea>`;
     box.appendChild(wrap);
     setTimeout(()=>{
       const ta = document.getElementById('edit_' + cls);
